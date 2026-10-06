@@ -4,7 +4,15 @@
 #include "exception/VMNotFoundException.hpp"
 #include <iostream>
 #include <libvirt/libvirt.h>
+#include <stdexcept>
+#include <string>
 #include <vector>
+
+VMManager::VMManager() {
+    if (not connect()) {
+        throw std::runtime_error("Connection failed");
+    }
+}
 
 VMManager::~VMManager() {
     disconnect();
@@ -96,4 +104,8 @@ virDomainInfo VMManager::getInfoOfVM(const std::string &name) const {
 std::vector<virDomainMemoryStatStruct> VMManager::getMemInfoOfVM(const std::string &name) const {
     VM vm = getVMByName(name);
     return vm.getMemoryStats();
+}
+
+const virConnectPtr VMManager::getConnectionPtr() const {
+    return connection;
 }

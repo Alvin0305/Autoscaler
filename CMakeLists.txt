@@ -11,12 +11,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBVIRT REQUIRED libvirt)
 
+find_package(LibXml2 REQUIRED)
+pkg_check_modules(LIBXMLXX REQUIRED IMPORTED_TARGET libxml++-2.6)
+
 add_executable(autoscaler
     src/main.cpp
+    src/AutoScaler.cpp
     src/VMManager.cpp
     src/VMMonitor.cpp
+    src/VMCloner.cpp
+    src/XMLParser.cpp
     src/VM.cpp
-    src/utils/utils.cpp    
+    src/utils/RandomGenerator.cpp
+    src/utils/utils.cpp
 )
 
 target_include_directories(autoscaler
@@ -33,6 +40,7 @@ target_link_directories(autoscaler
 target_link_libraries(autoscaler
     PRIVATE
         ${LIBVIRT_LIBRARIES}
+        PkgConfig::LIBXMLXX
 )
 
 target_compile_options(autoscaler

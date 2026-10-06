@@ -14,7 +14,7 @@ unsigned int VMMonitor::calculateCPUUsage(unsigned long long cpuTime1, unsigned 
     return static_cast<int>(usage);
 }
 
-bool VMMonitor::monitorUntilMax(unsigned int threshold) {
+MonitorResult VMMonitor::monitorUntilMaxOrMin(unsigned int maxThreshold, unsigned int minThreshold) {
     std::cout << "Started monitoring VM" << std::endl;
 
     auto info = vm.getInfo();
@@ -34,8 +34,12 @@ bool VMMonitor::monitorUntilMax(unsigned int threshold) {
         lastCPUTime = info.cpuTime;
         prevTime = currentTime;
 
-        if (cpuUsage > threshold) {
-            return true;
+        if (cpuUsage < minThreshold) {
+            return MonitorResult::SCALE_DOWN;
+        }
+
+        if (cpuUsage > maxThreshold) {
+            return MonitorResult::SCALE_UP;
         }
     }
 }

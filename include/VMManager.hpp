@@ -11,7 +11,7 @@ class VMManager {
     virConnectPtr connection;
 
   public:
-    explicit VMManager() = default;
+    explicit VMManager();
     ~VMManager();
 
     VMManager(const VMManager &other) = delete;
@@ -35,6 +35,8 @@ class VMManager {
 
     virDomainInfo getInfoOfVM(const std::string &name) const;
     std::vector<virDomainMemoryStatStruct> getMemInfoOfVM(const std::string &name) const;
+
+    const virConnectPtr getConnectionPtr() const;
 };
 
 #endif

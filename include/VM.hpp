@@ -5,6 +5,7 @@
 #include <vector>
 
 class VMManager;
+class VMCloner;
 
 class VM {
   private:
@@ -28,6 +29,7 @@ class VM {
     std::vector<virDomainMemoryStatStruct> getMemoryStats() const;
 
     friend class VMManager;
+    friend class VMCloner;
 };
 
 #endif
