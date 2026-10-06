@@ -5,7 +5,7 @@ project(AutoScaler
     LANGUAGES CXX
 )
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(PkgConfig REQUIRED)
@@ -22,7 +22,9 @@ add_executable(autoscaler
     src/VMCloner.cpp
     src/XMLParser.cpp
     src/VM.cpp
+    src/logger/Logger.cpp
     src/utils/RandomGenerator.cpp
+    src/utils/IDGenerator.cpp
     src/utils/utils.cpp
 )
 

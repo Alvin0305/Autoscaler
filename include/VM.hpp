@@ -17,7 +17,6 @@ class VM {
 
     VM(const VM &other) = delete;
     VM &operator=(const VM &other) = delete;
-
     VM(VM &&other) noexcept;
     VM &operator=(VM &&other) noexcept;
 

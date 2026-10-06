@@ -26,13 +26,9 @@ class VMManager {
     VM getVMByName(const std::string &name) const;
 
     void startVM(const std::string &name) const;
-    void startVM(const VM &vm) const;
     void shutdownVM(const std::string &name) const;
-    void shutdownVM(const VM &vm) const;
 
     int getStateOfVM(const std::string &name) const;
-    int getStateOfVM(const VM &vm) const;
-
     virDomainInfo getInfoOfVM(const std::string &name) const;
     std::vector<virDomainMemoryStatStruct> getMemInfoOfVM(const std::string &name) const;
 

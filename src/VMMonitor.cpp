@@ -1,6 +1,6 @@
 #include "VMMonitor.hpp"
+#include "logger/Logger.hpp"
 #include <chrono>
-#include <iostream>
 #include <thread>
 
 unsigned int VMMonitor::calculateCPUUsage(unsigned long long cpuTime1, unsigned long long cpuTime2, unsigned int numCPUs,
@@ -9,13 +9,13 @@ unsigned int VMMonitor::calculateCPUUsage(unsigned long long cpuTime1, unsigned 
     const double cpuSeconds = static_cast<double>(cpuTimeDelta / 1'000'000'000.0);
     const double usage = (cpuSeconds / (numCPUs * elapsedTime)) * 100;
 
-    std::cout << "\tCPU Time Delta: " << cpuTimeDelta << "\n\tCPU Seconds: " << cpuSeconds
-              << "\n\tElapsed Seconds: " << elapsedTime << "\n\tvCPUs: " << numCPUs << std::endl;
+    LOG_DEBUG("\tCPU Time Delta: {}\n\tCPU Seconds: {}\n\tElapsed Seconds: {}\n\tvCPUs: {}", cpuTimeDelta, cpuSeconds,
+              elapsedTime, numCPUs);
     return static_cast<int>(usage);
 }
 
 MonitorResult VMMonitor::monitorUntilMaxOrMin(unsigned int maxThreshold, unsigned int minThreshold) {
-    std::cout << "Started monitoring VM" << std::endl;
+    LOG_INFO("Started monitoring VM");
 
     auto info = vm.getInfo();
     auto prevTime = std::chrono::steady_clock::now();
@@ -29,7 +29,7 @@ MonitorResult VMMonitor::monitorUntilMaxOrMin(unsigned int maxThreshold, unsigne
 
         info = vm.getInfo();
         unsigned int cpuUsage = calculateCPUUsage(lastCPUTime, info.cpuTime, info.nrVirtCpu, elapsedSeconds);
-        std::cout << "Usage: " << cpuUsage << "%\n";
+        LOG_INFO("Usage: {}%", cpuUsage);
 
         lastCPUTime = info.cpuTime;
         prevTime = currentTime;

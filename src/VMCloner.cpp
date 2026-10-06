@@ -1,9 +1,8 @@
 #include "VMCloner.hpp"
+#include "Constants.hpp"
 #include "VM.hpp"
 #include "XMLParser.hpp"
-#include "utils/RandomGenerator.hpp"
 #include <filesystem>
-#include <iostream>
 #include <libvirt/libvirt.h>
 #include <libxml++/document.h>
 #include <libxml++/libxml++.h>
@@ -11,48 +10,10 @@
 #include <libxml++/parsers/domparser.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-#include <ostream>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 
-std::string VMCloner::generateMAC() const {
-    std::stringstream ss;
-    ss << "52:54:00:";
-
-    for (int i = 0; i < 3; i++) {
-        int randomNum = RandomGenerator::generate(0, 15);
-        ss << std::hex << randomNum;
-        randomNum = RandomGenerator::generate(0, 15);
-        ss << std::hex << randomNum << std::dec;
-
-        if (i != 2) ss << ":";
-    }
-
-    std::cout << "Generated MAC: " << ss.str() << std::endl;
-    return ss.str();
-}
-
-std::string VMCloner::generateUUID() const {
-    std::stringstream ss;
-    const int groups[] = {8, 4, 4, 4, 12};
-
-    for (int i = 0; i < 5; i++) {
-        for (int j = 0; j < groups[i]; j++) {
-            int randomNum = RandomGenerator::generate(0, 15);
-            ss << std::hex << randomNum << std::dec;
-        }
-
-        if (i != 4) {
-            ss << "-";
-        }
-    }
-
-    std::cout << "Generated UUID: " << ss.str() << std::endl;
-    return ss.str();
-}
-
-std::string VMCloner::generateNewDiskPath(const std::string &sourceVMDiskPath, const std::string &cloneVMName) const {
+std::string VMCloner::buildNewDiskPath(const std::string &sourceVMDiskPath, const std::string &cloneVMName) const {
     std::filesystem::path p(sourceVMDiskPath);
     std::filesystem::path parentPath = p.parent_path();
     std::filesystem::path newPath = parentPath / (cloneVMName + ".qcow2");
@@ -60,13 +21,27 @@ std::string VMCloner::generateNewDiskPath(const std::string &sourceVMDiskPath, c
     return newPath.string();
 }
 
-void VMCloner::cloneDisk(const std::string &sourceVMDiskPath, const std::string &cloneVMDiskName) const {
-    virStorageVolPtr sourceVolume = virStorageVolLookupByPath(connection, sourceVMDiskPath.c_str());
+std::string VMCloner::buildStorageVolXML(const std::string &diskImageFileName, unsigned long long capacity) const {
+    return "<volume>"
+           "<name>" +
+           diskImageFileName +
+           "</name>"
+           "<capacity unit='bytes'>" +
+           std::to_string(capacity) +
+           "</capacity>"
+           "<target>"
+           "<format type='qcow2'/>"
+           "</target>"
+           "</volume>";
+}
+
+void VMCloner::cloneDisk(const std::string &sourceVMDiskImageFilePath, const std::string &cloneVMDiskImageFileName) const {
+    virStorageVolPtr sourceVolume = virStorageVolLookupByPath(connection, sourceVMDiskImageFilePath.c_str());
     if (not sourceVolume) {
         throw std::runtime_error("Failed to get Source Volume");
     }
 
-    virStoragePoolPtr sourcePool = virStoragePoolLookupByName(connection, "default");
+    virStoragePoolPtr sourcePool = virStoragePoolLookupByName(connection, Constants::DEFAULT_STORAGE_POOL_NAME);
     if (not sourcePool) {
         throw std::runtime_error("Failed to get Default Source Pool");
     }
@@ -75,27 +50,14 @@ void VMCloner::cloneDisk(const std::string &sourceVMDiskPath, const std::string 
     if (virStorageVolGetInfo(sourceVolume, &volInfo) < 0) {
         virStoragePoolFree(sourcePool);
         virStorageVolFree(sourceVolume);
-
         throw std::runtime_error("Failed to get Storage Volume Info");
     }
 
-    std::string xml = "<volume>"
-                      "<name>" +
-                      cloneVMDiskName +
-                      "</name>"
-                      "<capacity unit='bytes'>" +
-                      std::to_string(volInfo.capacity) +
-                      "</capacity>"
-                      "<target>"
-                      "<format type='qcow2'/>"
-                      "</target>"
-                      "</volume>";
-
+    std::string xml = buildStorageVolXML(cloneVMDiskImageFileName, volInfo.capacity);
     virStorageVolPtr cloneVolume = virStorageVolCreateXMLFrom(sourcePool, xml.c_str(), sourceVolume, 0);
     if (not cloneVolume) {
         virStoragePoolFree(sourcePool);
         virStorageVolFree(sourceVolume);
-
         throw std::runtime_error("Failed to clone Storage Volume");
     }
 
@@ -112,18 +74,17 @@ VM VMCloner::clone(const std::string &sourceVMName, const std::string &cloneVMNa
     free(xml);
 
     std::string sourceVMDiskPath = parser.getDiskPath();
-    std::string newVMDiskPath = generateNewDiskPath(sourceVMDiskPath, cloneVMName);
+    std::string newVMDiskPath = buildNewDiskPath(sourceVMDiskPath, cloneVMName);
 
     parser.setName(cloneVMName);
-    parser.setUUID(generateUUID());
-    parser.setMAC(generateMAC());
+    parser.setUUID(idGenerator.generateUUID());
+    parser.setMAC(idGenerator.generateMAC());
     parser.setDiskPath(newVMDiskPath);
 
-    std::string clonedVMXML = parser.getXML();
-
-    std::string cloneVMDiskName = cloneVMName + ".qcow2";
+    std::string cloneVMDiskName = cloneVMName + Constants::DISK_IMAGE_FILE_EXTENSION;
     cloneDisk(sourceVMDiskPath, cloneVMDiskName);
 
+    std::string clonedVMXML = parser.getXML();
     virDomainPtr newDomainPtr = virDomainDefineXML(connection, clonedVMXML.c_str());
 
     virDomainFree(sourceDomain);

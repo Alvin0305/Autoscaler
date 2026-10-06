@@ -2,7 +2,7 @@
 #include "Constants.hpp"
 #include "VM.hpp"
 #include "exception/VMNotFoundException.hpp"
-#include <iostream>
+#include "logger/Logger.hpp"
 #include <libvirt/libvirt.h>
 #include <stdexcept>
 #include <string>
@@ -37,7 +37,7 @@ VMManager &VMManager::operator=(VMManager &&other) noexcept {
 
 bool VMManager::connect() {
     connection = virConnectOpen(Constants::QEMU_URL);
-    std::cout << "Connected to: " << virConnectGetURI(connection) << std::endl;
+    LOG_INFO("Connected to: {}", virConnectGetURI(connection));
     return connection != nullptr;
 }
 
@@ -70,29 +70,19 @@ VM VMManager::getVMByName(const std::string &name) const {
 }
 
 void VMManager::startVM(const std::string &name) const {
+    LOG_INFO("Starting {}", name);
     VM vm = getVMByName(name);
-    startVM(vm);
-}
-
-void VMManager::startVM(const VM &vm) const {
     vm.start();
 }
 
 void VMManager::shutdownVM(const std::string &name) const {
+    LOG_INFO("Shutting down {}", name);
     VM vm = getVMByName(name);
-    shutdownVM(vm);
-}
-
-void VMManager::shutdownVM(const VM &vm) const {
     vm.shutdown();
 }
 
 int VMManager::getStateOfVM(const std::string &name) const {
     VM vm = getVMByName(name);
-    return getStateOfVM(vm);
-}
-
-int VMManager::getStateOfVM(const VM &vm) const {
     return vm.getState();
 }
 
