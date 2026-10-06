@@ -32,6 +32,9 @@ class VMManager {
 
     int getStateOfVM(const std::string &name) const;
     int getStateOfVM(const VM &vm) const;
+
+    virDomainInfo getInfoOfVM(const std::string &name) const;
+    std::vector<virDomainMemoryStatStruct> getMemInfoOfVM(const std::string &name) const;
 };
 
 #endif

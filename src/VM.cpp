@@ -1,5 +1,7 @@
 #include "VM.hpp"
+#include <libvirt/libvirt.h>
 #include <stdexcept>
+#include <vector>
 
 VM::~VM() {
     if (domainPtr != nullptr) {
@@ -56,4 +58,26 @@ int VM::getState() const {
     }
 
     return state;
+}
+
+virDomainInfo VM::getInfo() const {
+    virDomainInfo info;
+    int ret = virDomainGetInfo(domainPtr, &info);
+
+    if (ret != 0) {
+        throw std::runtime_error("Failed to get info of VM");
+    }
+    return info;
+}
+
+std::vector<virDomainMemoryStatStruct> VM::getMemoryStats() const {
+    std::vector<virDomainMemoryStatStruct> stats(10);
+    int count = virDomainMemoryStats(domainPtr, stats.data(), stats.size(), 0);
+
+    if (count < 0) {
+        throw std::runtime_error("Failed to get memory statistics");
+    }
+
+    stats.resize(count);
+    return stats;
 }

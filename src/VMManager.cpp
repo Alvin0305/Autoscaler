@@ -4,6 +4,7 @@
 #include "exception/VMNotFoundException.hpp"
 #include <iostream>
 #include <libvirt/libvirt.h>
+#include <vector>
 
 VMManager::~VMManager() {
     disconnect();
@@ -85,4 +86,14 @@ int VMManager::getStateOfVM(const std::string &name) const {
 
 int VMManager::getStateOfVM(const VM &vm) const {
     return vm.getState();
+}
+
+virDomainInfo VMManager::getInfoOfVM(const std::string &name) const {
+    VM vm = getVMByName(name);
+    return vm.getInfo();
+}
+
+std::vector<virDomainMemoryStatStruct> VMManager::getMemInfoOfVM(const std::string &name) const {
+    VM vm = getVMByName(name);
+    return vm.getMemoryStats();
 }

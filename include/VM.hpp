@@ -2,6 +2,7 @@
 #define VM_HPP
 
 #include <libvirt/libvirt.h>
+#include <vector>
 
 class VMManager;
 
@@ -23,6 +24,8 @@ class VM {
     void shutdown() const;
 
     int getState() const;
+    virDomainInfo getInfo() const;
+    std::vector<virDomainMemoryStatStruct> getMemoryStats() const;
 
     friend class VMManager;
 };

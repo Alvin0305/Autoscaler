@@ -14,6 +14,7 @@ pkg_check_modules(LIBVIRT REQUIRED libvirt)
 add_executable(autoscaler
     src/main.cpp
     src/VMManager.cpp
+    src/VMMonitor.cpp
     src/VM.cpp
     src/utils/utils.cpp    
 )
