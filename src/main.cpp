@@ -1,4 +1,4 @@
-#include "AutoScaler.hpp"
+#include "core/AutoScaler.hpp"
 
 int main() {
     AutoScaler autoscaler;

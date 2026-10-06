@@ -1,7 +1,7 @@
-#include "VMCloner.hpp"
+#include "core/VMCloner.hpp"
 #include "Constants.hpp"
 #include "VM.hpp"
-#include "XMLParser.hpp"
+#include "tools/XMLParser.hpp"
 #include <filesystem>
 #include <libvirt/libvirt.h>
 #include <libxml++/document.h>

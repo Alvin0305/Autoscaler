@@ -1,4 +1,4 @@
-#include "XMLParser.hpp"
+#include "tools/XMLParser.hpp"
 #include <libxml++/parsers/domparser.h>
 
 xmlpp::Element *XMLParser::findChild(xmlpp::Element *parent, const std::string &name) {

@@ -1,8 +1,8 @@
-#include "AutoScaler.hpp"
+#include "core/AutoScaler.hpp"
 #include "Constants.hpp"
 #include "VM.hpp"
-#include "VMManager.hpp"
-#include "VMMonitor.hpp"
+#include "core/VMManager.hpp"
+#include "core/VMMonitor.hpp"
 #include "logger/Logger.hpp"
 #include "utils/utils.hpp"
 #include <libvirt/libvirt.h>
