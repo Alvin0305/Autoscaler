@@ -25,7 +25,33 @@ void AutoScaler::printInfo() const {
     LOG_INFO("{}", memStatsToString(memStats));
 }
 
-void AutoScaler::monitorAndScale() const {
+void AutoScaler::scaleDown() {
+    LOG_INFO("Reached MIN Threshold...");
+    if (not secondVM) {
+        LOG_INFO("There is no second VM. No scale down initiated");
+        return;
+    }
+
+    LOG_INFO("There is a second VM. Scale down initiated...");
+    destroyer.destroy(secondVM.value());
+    secondVM = std::nullopt;
+    LOG_INFO("Second VM destroyed");
+}
+
+void AutoScaler::scaleUp() {
+    LOG_INFO("Reached MAX Threshold...");
+    if (secondVM) {
+        LOG_INFO("There is already a second VM. No scale up initiated");
+        return;
+    }
+
+    LOG_INFO("There is no second VM. Scale up initiated...");
+    secondVM = cloner.clone(baseVMName, cloneVMName);
+    manager.startVM(cloneVMName);
+    LOG_INFO("VM Cloned and started. State of {} is: {}", vmName, VMStateToString(manager.getStateOfVM(vmName)));
+}
+
+void AutoScaler::monitorAndScale() {
     while (true) {
         const VM &vm = manager.getVMByName(vmName);
 
@@ -34,18 +60,14 @@ void AutoScaler::monitorAndScale() const {
             monitor.monitorUntilMaxOrMin(Constants::MAX_CPU_USAGE_THRESHOLD, Constants::MIN_CPU_USAGE_THRESHOLD);
 
         if (result == MonitorResult::SCALE_UP) {
-            LOG_INFO("Reached MAX Threshold. Triggering cloning");
-
-            cloner.clone(baseVMName, cloneVMName);
-            manager.startVM(cloneVMName);
-            LOG_INFO("State of {} is: {}", vmName, VMStateToString(manager.getStateOfVM(vmName)));
+            scaleUp();
         } else {
-            LOG_INFO("Reached MIN Threshold. Triggering decloning");
+            scaleDown();
         }
     }
 }
 
-void AutoScaler::start() const {
+void AutoScaler::start() {
     VMManager manager;
     listAllVMs();
     printInfo();

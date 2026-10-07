@@ -1,13 +1,12 @@
 #include "tools/XMLParser.hpp"
+#include <libxml++/nodes/element.h>
 #include <libxml++/parsers/domparser.h>
+#include <vector>
 
 xmlpp::Element *XMLParser::findChild(xmlpp::Element *parent, const std::string &name) {
-    if (not parent) {
-        return nullptr;
-    }
+    if (not parent) return nullptr;
 
     auto children = parent->get_children(name);
-
     for (auto *node : children) {
         if (auto *element = dynamic_cast<xmlpp::Element *>(node)) {
             return element;
@@ -15,6 +14,31 @@ xmlpp::Element *XMLParser::findChild(xmlpp::Element *parent, const std::string &
     }
 
     return nullptr;
+}
+
+std::vector<std::string> XMLParser::getAllVolumePaths() {
+    std::vector<std::string> paths;
+
+    xmlpp::Document *document = parser.get_document();
+    xmlpp::Element *root = document->get_root_node();
+
+    auto *devices = findChild(root, "devices");
+    auto disks = devices->get_children();
+    for (auto *diskNode : disks) {
+        if (not diskNode) continue;
+        auto *disk = dynamic_cast<xmlpp::Element *>(diskNode);
+
+        auto *source = findChild(disk, "source");
+        if (not source) continue;
+
+        auto *file = source->get_attribute("file");
+        if (not file) continue;
+
+        std::string path = file->get_value();
+        paths.push_back(path);
+    }
+
+    return paths;
 }
 
 std::string XMLParser::getDiskPath() {

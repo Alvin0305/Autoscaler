@@ -1,8 +1,11 @@
 #ifndef AUTO_SCALER_HPP
 #define AUTO_SCALER_HPP
 
-#include "VMCloner.hpp"
+#include "VM.hpp"
 #include "VMManager.hpp"
+#include "scaler/VMCloner.hpp"
+#include "scaler/VMDestroyer.hpp"
+#include <optional>
 
 class AutoScaler {
   private:
@@ -12,14 +15,20 @@ class AutoScaler {
 
     VMManager manager;
     VMCloner cloner;
+    VMDestroyer destroyer;
+
+    std::optional<VM> secondVM;
 
     void listAllVMs() const;
     void printInfo() const;
-    void monitorAndScale() const;
+
+    void scaleUp();
+    void scaleDown();
+    void monitorAndScale();
 
   public:
-    AutoScaler() : manager(), cloner(manager.getConnectionPtr()) {};
-    void start() const;
+    AutoScaler() : manager(), cloner(manager.getConnectionPtr()), destroyer(manager.getConnectionPtr()) {};
+    void start();
 };
 
 #endif

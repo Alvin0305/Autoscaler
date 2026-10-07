@@ -6,6 +6,7 @@
 
 class VMManager;
 class VMCloner;
+class VMDestroyer;
 
 class VM {
   private:
@@ -22,6 +23,7 @@ class VM {
 
     void start() const;
     void shutdown() const;
+    void destroy() const;
 
     int getState() const;
     virDomainInfo getInfo() const;
@@ -29,6 +31,7 @@ class VM {
 
     friend class VMManager;
     friend class VMCloner;
+    friend class VMDestroyer;
 };
 
 #endif

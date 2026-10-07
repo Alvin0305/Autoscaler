@@ -16,16 +16,16 @@ pkg_check_modules(LIBXMLXX REQUIRED IMPORTED_TARGET libxml++-2.6)
 
 add_executable(autoscaler
     src/main.cpp
-    src/AutoScaler.cpp
-    src/VMManager.cpp
-    src/VMMonitor.cpp
-    src/VMCloner.cpp
-    src/XMLParser.cpp
+    src/core/AutoScaler.cpp
+    src/core/VMManager.cpp
+    src/core/VMMonitor.cpp
+    src/scaler/VMCloner.cpp
+    src/scaler/VMDestroyer.cpp
+    src/tools/XMLParser.cpp
     src/VM.cpp
     src/logger/Logger.cpp
-    src/utils/RandomGenerator.cpp
-    src/utils/IDGenerator.cpp
     src/utils/utils.cpp
+    src/utils/IDGenerator.cpp
 )
 
 target_include_directories(autoscaler

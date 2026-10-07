@@ -5,6 +5,7 @@
 #include <libxml++/nodes/element.h>
 #include <libxml++/parsers/domparser.h>
 #include <string>
+#include <vector>
 
 class XMLParser {
   private:
@@ -18,6 +19,7 @@ class XMLParser {
     };
 
     std::string getDiskPath();
+    std::vector<std::string> getAllVolumePaths();
 
     void setName(const std::string &newName);
     void setUUID(const std::string &uuid);

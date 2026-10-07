@@ -48,6 +48,17 @@ void VM::shutdown() const {
     }
 }
 
+void VM::destroy() const {
+    if (getState() == VIR_DOMAIN_SHUTOFF) {
+        throw std::runtime_error("Invalid State. Tried to shutdown a VM which is already shutdown.");
+    }
+
+    int ret = virDomainDestroy(domainPtr);
+    if (ret != 0) {
+        throw std::runtime_error("Failed to stop VM");
+    }
+}
+
 int VM::getState() const {
     int state;
     int reason;

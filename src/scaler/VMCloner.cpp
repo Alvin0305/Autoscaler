@@ -1,6 +1,7 @@
-#include "core/VMCloner.hpp"
+#include "scaler/VMCloner.hpp"
 #include "Constants.hpp"
 #include "VM.hpp"
+#include "logger/Logger.hpp"
 #include "tools/XMLParser.hpp"
 #include <filesystem>
 #include <libvirt/libvirt.h>
@@ -36,6 +37,7 @@ std::string VMCloner::buildStorageVolXML(const std::string &diskImageFileName, u
 }
 
 void VMCloner::cloneDisk(const std::string &sourceVMDiskImageFilePath, const std::string &cloneVMDiskImageFileName) const {
+    LOG_INFO("Cloning Disk from {} to {}", sourceVMDiskImageFilePath, cloneVMDiskImageFileName);
     virStorageVolPtr sourceVolume = virStorageVolLookupByPath(connection, sourceVMDiskImageFilePath.c_str());
     if (not sourceVolume) {
         throw std::runtime_error("Failed to get Source Volume");
@@ -67,6 +69,7 @@ void VMCloner::cloneDisk(const std::string &sourceVMDiskImageFilePath, const std
 }
 
 VM VMCloner::clone(const std::string &sourceVMName, const std::string &cloneVMName) const {
+    LOG_INFO("Cloning VM");
     virDomainPtr sourceDomain = virDomainLookupByName(connection, sourceVMName.c_str());
     char *xml = virDomainGetXMLDesc(sourceDomain, VIR_DOMAIN_XML_INACTIVE);
 
@@ -76,6 +79,7 @@ VM VMCloner::clone(const std::string &sourceVMName, const std::string &cloneVMNa
     std::string sourceVMDiskPath = parser.getDiskPath();
     std::string newVMDiskPath = buildNewDiskPath(sourceVMDiskPath, cloneVMName);
 
+    LOG_DEBUG("\tUpdating Name, UUID, MAC and DiskPath of cloned VM");
     parser.setName(cloneVMName);
     parser.setUUID(idGenerator.generateUUID());
     parser.setMAC(idGenerator.generateMAC());
@@ -84,6 +88,7 @@ VM VMCloner::clone(const std::string &sourceVMName, const std::string &cloneVMNa
     std::string cloneVMDiskName = cloneVMName + Constants::DISK_IMAGE_FILE_EXTENSION;
     cloneDisk(sourceVMDiskPath, cloneVMDiskName);
 
+    LOG_DEBUG("\tDefining VM XML Config");
     std::string clonedVMXML = parser.getXML();
     virDomainPtr newDomainPtr = virDomainDefineXML(connection, clonedVMXML.c_str());
 
