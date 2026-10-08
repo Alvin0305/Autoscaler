@@ -2,6 +2,7 @@
 #include "utils/RandomGenerator.hpp"
 #include <ios>
 #include <sstream>
+#include <string>
 
 std::string IDGenerator::generateMAC() const {
     std::stringstream ss;
@@ -35,4 +36,9 @@ std::string IDGenerator::generateUUID() const {
     }
 
     return ss.str();
+}
+
+std::string IDGenerator::generateVMName() const {
+    static int count = 1;
+    return "autoscaler-server" + std::to_string(++count);
 }

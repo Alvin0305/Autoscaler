@@ -2,19 +2,38 @@
 #define VM_MONITOR_HPP
 
 #include "VM.hpp"
+#include <vector>
 
-enum MonitorResult { SCALE_UP, SCALE_DOWN };
+struct MonitorResult {
+    enum Action { SCALE_UP, SCALE_DOWN };
+
+    Action action;
+    const VM &vm;
+
+  private:
+    MonitorResult(const VM &vm, const Action &action) : vm(vm), action(action) {};
+
+  public:
+    static MonitorResult scaleup(const VM &vm) {
+        return MonitorResult(vm, SCALE_UP);
+    }
+
+    static MonitorResult scaledown(const VM &vm) {
+        return MonitorResult(vm, SCALE_DOWN);
+    }
+};
 
 class VMMonitor {
   private:
-    const VM &vm;
+    const std::vector<VM> &vms;
     unsigned int interval;
-
-  public:
-    explicit VMMonitor(const VM &vm, unsigned int interval) : vm(vm), interval(interval) {};
 
     unsigned int calculateCPUUsage(unsigned long long cpuTime1, unsigned long long cpuTime2, unsigned int numCPUs,
                                    double elapsedTime) const;
+
+  public:
+    explicit VMMonitor(const std::vector<VM> &vms, unsigned int interval) : vms(vms), interval(interval) {};
+
     MonitorResult monitorUntilMaxOrMin(unsigned int maxThreshold, unsigned int minThreshold);
 };
 

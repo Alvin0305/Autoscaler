@@ -9,8 +9,9 @@ VM::~VM() {
     }
 }
 
-VM::VM(VM &&other) noexcept : domainPtr(other.domainPtr) {
+VM::VM(VM &&other) noexcept : domainPtr(other.domainPtr), name(other.name) {
     other.domainPtr = nullptr;
+    other.name = "";
 }
 
 VM &VM::operator=(VM &&other) noexcept {
@@ -20,10 +21,16 @@ VM &VM::operator=(VM &&other) noexcept {
         }
 
         domainPtr = other.domainPtr;
+        name = other.name;
         other.domainPtr = nullptr;
+        other.name = "";
     }
 
     return *this;
+}
+
+bool VM::operator==(const VM &other) const {
+    return this->domainPtr == other.domainPtr;
 }
 
 void VM::start() const {

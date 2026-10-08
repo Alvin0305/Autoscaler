@@ -4,7 +4,9 @@
 #include "core/VMManager.hpp"
 #include "core/VMMonitor.hpp"
 #include "logger/Logger.hpp"
+#include "utils/IDGenerator.hpp"
 #include "utils/utils.hpp"
+#include <algorithm>
 #include <libvirt/libvirt.h>
 #include <stdexcept>
 #include <string>
@@ -25,44 +27,57 @@ void AutoScaler::printInfo() const {
     LOG_INFO("{}", memStatsToString(memStats));
 }
 
-void AutoScaler::scaleDown() {
-    LOG_INFO("Reached MIN Threshold...");
-    if (not secondVM) {
-        LOG_INFO("There is no second VM. No scale down initiated");
+void AutoScaler::populateVMs() {
+    const auto vmNames = manager.getAllVMNames();
+    for (const auto &vmName : vmNames) {
+        if (vmName == baseVMName) continue;
+        vms.push_back(manager.getVMByName(vmName));
+    }
+}
+
+void AutoScaler::scaleDown(const VM &vm) {
+    LOG_INFO("VM {} Reached MIN Threshold...", vm.getName());
+    if (vms.size() == 1) {
+        LOG_INFO("There is only one VM. Scale down NOT initiated");
         return;
     }
 
-    LOG_INFO("There is a second VM. Scale down initiated...");
-    destroyer.destroy(secondVM.value());
-    secondVM = std::nullopt;
-    LOG_INFO("Second VM destroyed");
+    LOG_INFO("There are {} VMs. Scale down initiated...", vms.size());
+    destroyer.destroy(vm);
+    auto it = std::find(vms.begin(), vms.end(), vm);
+    if (it != vms.end()) {
+        vms.erase(it);
+    }
+
+    LOG_INFO("VM destroyed");
 }
 
 void AutoScaler::scaleUp() {
-    LOG_INFO("Reached MAX Threshold...");
-    if (secondVM) {
-        LOG_INFO("There is already a second VM. No scale up initiated");
-        return;
-    }
+    LOG_INFO("Reached MAX Threshold. Scale up initiated...");
 
-    LOG_INFO("There is no second VM. Scale up initiated...");
-    secondVM = cloner.clone(baseVMName, cloneVMName);
+    std::string cloneVMName = idGenerator.generateVMName();
+    vms.push_back(cloner.clone(baseVMName, cloneVMName));
     manager.startVM(cloneVMName);
-    LOG_INFO("VM Cloned and started. State of {} is: {}", vmName, VMStateToString(manager.getStateOfVM(vmName)));
+
+    LOG_INFO("VM {} Cloned to {} and started.", vmName, cloneVMName);
+    LOG_INFO("State of {} is: {}", cloneVMName, VMStateToString(manager.getStateOfVM(cloneVMName)));
 }
 
 void AutoScaler::monitorAndScale() {
     while (true) {
-        const VM &vm = manager.getVMByName(vmName);
-
-        VMMonitor monitor(vm, Constants::MONITORING_INTERVAL);
+        VMMonitor monitor(vms, Constants::MONITORING_INTERVAL);
         MonitorResult result =
             monitor.monitorUntilMaxOrMin(Constants::MAX_CPU_USAGE_THRESHOLD, Constants::MIN_CPU_USAGE_THRESHOLD);
 
-        if (result == MonitorResult::SCALE_UP) {
-            scaleUp();
-        } else {
-            scaleDown();
+        switch (result.action) {
+            case MonitorResult::SCALE_UP:
+                scaleUp();
+                break;
+            case MonitorResult::SCALE_DOWN:
+                scaleDown(result.vm);
+                break;
+            default:
+                LOG_ERROR("Unhandled action by VMMonitor: {}", static_cast<int>(result.action));
         }
     }
 }
@@ -72,7 +87,15 @@ void AutoScaler::start() {
     listAllVMs();
     printInfo();
 
-    if (manager.getStateOfVM(vmName) != VIR_DOMAIN_RUNNING) {
+    populateVMs();
+    LOG_INFO("Watching {} VMs", vms.size());
+    for (const auto &vm : vms) {
+        LOG_INFO("- {}", vm.getName());
+    }
+
+    LOG_DEBUG("Starting all VMs");
+    for (const auto &vm : vms) {
+        if (manager.getStateOfVM(vmName) == VIR_DOMAIN_RUNNING) continue;
         manager.startVM(vmName);
     }
 

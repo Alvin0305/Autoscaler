@@ -90,8 +90,8 @@ VM VMCloner::clone(const std::string &sourceVMName, const std::string &cloneVMNa
 
     LOG_DEBUG("\tDefining VM XML Config");
     std::string clonedVMXML = parser.getXML();
-    virDomainPtr newDomainPtr = virDomainDefineXML(connection, clonedVMXML.c_str());
+    virDomainPtr cloneVMPtr = virDomainDefineXML(connection, clonedVMXML.c_str());
 
     virDomainFree(sourceDomain);
-    return VM(newDomainPtr);
+    return VM(cloneVMPtr, cloneVMName);
 }

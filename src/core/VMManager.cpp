@@ -66,7 +66,7 @@ VM VMManager::getVMByName(const std::string &name) const {
     if (domainPtr == nullptr) {
         throw VMNotFoundException(name);
     }
-    return VM(domainPtr);
+    return VM(domainPtr, name);
 }
 
 void VMManager::startVM(const std::string &name) const {
