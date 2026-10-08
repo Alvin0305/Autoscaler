@@ -21,10 +21,12 @@ void AutoScaler::listAllVMs() const {
 }
 
 void AutoScaler::printInfo() const {
-    virDomainInfo info = manager.getInfoOfVM(vmName);
-    const auto memStats = manager.getMemInfoOfVM(vmName);
-    LOG_INFO("{}", info);
-    LOG_INFO("{}", memStatsToString(memStats));
+    for (const auto &vm : vms) {
+        virDomainInfo info = manager.getInfoOfVM(vm.getName());
+        const auto memStats = manager.getMemInfoOfVM(vm.getName());
+        LOG_INFO("{}", info);
+        LOG_INFO("{}", memStatsToString(memStats));
+    }
 }
 
 void AutoScaler::populateVMs() {
@@ -59,7 +61,7 @@ void AutoScaler::scaleUp() {
     vms.push_back(cloner.clone(baseVMName, cloneVMName));
     manager.startVM(cloneVMName);
 
-    LOG_INFO("VM {} Cloned to {} and started.", vmName, cloneVMName);
+    LOG_INFO("VM {} Cloned to {} and started.", baseVMName, cloneVMName);
     LOG_INFO("State of {} is: {}", cloneVMName, VMStateToString(manager.getStateOfVM(cloneVMName)));
 }
 
@@ -95,8 +97,8 @@ void AutoScaler::start() {
 
     LOG_DEBUG("Starting all VMs");
     for (const auto &vm : vms) {
-        if (manager.getStateOfVM(vmName) == VIR_DOMAIN_RUNNING) continue;
-        manager.startVM(vmName);
+        if (manager.getStateOfVM(vm.getName()) == VIR_DOMAIN_RUNNING) continue;
+        manager.startVM(vm.getName());
     }
 
     try {

@@ -2,8 +2,20 @@
 #include <libvirt/libvirt.h>
 #include <ostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
+
+std::string messageActionToString(const Message::Action &action) {
+    switch (action) {
+        case Message::Action::VM_ADDED:
+            return "vm_added";
+        case Message::Action::VM_DESTROYED:
+            return "vm_destroyed";
+        default:
+            throw std::runtime_error("Unhandled Message Action");
+    }
+}
 
 std::string VMStateToString(int state) {
     switch (state) {

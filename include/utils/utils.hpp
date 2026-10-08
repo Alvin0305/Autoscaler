@@ -1,11 +1,13 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
+#include "Message.hpp"
 #include <libvirt/libvirt.h>
 #include <ostream>
 #include <string>
 #include <vector>
 
+std::string messageActionToString(const Message::Action &action);
 std::string VMStateToString(int state);
 
 std::string memStatTagToString(int tag);
