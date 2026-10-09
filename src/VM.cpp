@@ -1,6 +1,8 @@
 #include "VM.hpp"
+#include "logger/Logger.hpp"
 #include <libvirt/libvirt.h>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 VM::~VM() {
@@ -98,4 +100,30 @@ std::vector<virDomainMemoryStatStruct> VM::getMemoryStats() const {
 
     stats.resize(count);
     return stats;
+}
+
+std::string VM::getIP() const {
+    virDomainInterfacePtr *interfaces = nullptr;
+    int count = virDomainInterfaceAddresses(domainPtr, &interfaces, VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0);
+    if (count < 0) {
+        throw std::runtime_error("virDomainInterfaceAddresses failed");
+    }
+
+    for (int i = 0; i < count; i++) {
+        virDomainInterfacePtr interface = interfaces[i];
+
+        LOG_INFO("Interface: {}, MAC: {}", interface->name, interface->hwaddr);
+
+        for (int j = 0; j < interface->naddrs; j++) {
+            virDomainIPAddressPtr address = &interface->addrs[j];
+            LOG_INFO("IP: {}", address->addr);
+
+            if (address->type == VIR_IP_ADDR_TYPE_IPV4) {
+                std::string ip = address->addr;
+                return ip;
+            }
+        }
+    }
+
+    return "";
 }

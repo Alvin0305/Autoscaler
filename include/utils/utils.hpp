@@ -1,7 +1,7 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
-#include "Message.hpp"
+#include "connection/Message.hpp"
 #include <libvirt/libvirt.h>
 #include <ostream>
 #include <string>

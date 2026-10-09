@@ -51,6 +51,10 @@ std::vector<std::string> VMManager::getAllVMNames() const {
     virDomainPtr *domains = nullptr;
     int numDomains = virConnectListAllDomains(connection, &domains, 0);
 
+    if (numDomains == 0) {
+        LOG_WARN("No VMs");
+    }
+
     std::vector<std::string> domainNames(numDomains);
     for (int i = 0; i < numDomains; i++) {
         domainNames[i] = virDomainGetName(domains[i]);

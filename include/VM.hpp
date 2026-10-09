@@ -33,6 +33,8 @@ class VM {
     virDomainInfo getInfo() const;
     std::vector<virDomainMemoryStatStruct> getMemoryStats() const;
 
+    std::string getIP() const;
+
     friend class VMManager;
     friend class VMCloner;
     friend class VMDestroyer;

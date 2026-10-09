@@ -22,6 +22,8 @@ add_executable(autoscaler
     src/scaler/VMCloner.cpp
     src/scaler/VMDestroyer.cpp
     src/tools/XMLParser.cpp
+    src/connection/MessageSender.cpp
+    src/connection/Socket.cpp
     src/VM.cpp
     src/logger/Logger.cpp
     src/utils/utils.cpp

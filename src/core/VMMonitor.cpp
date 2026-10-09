@@ -30,7 +30,7 @@ MonitorResult VMMonitor::monitorUntilMaxOrMin(unsigned int maxThreshold, unsigne
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(interval));
 
-        for (int i = 0; i < vms.size(); i++) {
+        for (int i = vms.size() - 1; i >= 0; i--) {
             const auto &vm = vms[i];
             const auto currentTime = std::chrono::steady_clock::now();
             double elapsedSeconds = std::chrono::duration<double>(currentTime - prevTime).count();

@@ -3,6 +3,7 @@
 
 #include "VM.hpp"
 #include "VMManager.hpp"
+#include "connection/MessageSender.hpp"
 #include "scaler/VMCloner.hpp"
 #include "scaler/VMDestroyer.hpp"
 #include "utils/IDGenerator.hpp"
@@ -18,6 +19,7 @@ class AutoScaler {
     VMCloner cloner;
     VMDestroyer destroyer;
     IDGenerator idGenerator;
+    MessageSender sender;
 
     void listAllVMs() const;
     void printInfo() const;
@@ -29,7 +31,9 @@ class AutoScaler {
     void monitorAndScale();
 
   public:
-    AutoScaler() : manager(), cloner(manager.getConnectionPtr()), destroyer(manager.getConnectionPtr()), idGenerator() {};
+    AutoScaler()
+        : manager(), cloner(manager.getConnectionPtr()), destroyer(manager.getConnectionPtr()), idGenerator(),
+          sender("127.0.0.1", 8080) {};
     void start();
 };
 

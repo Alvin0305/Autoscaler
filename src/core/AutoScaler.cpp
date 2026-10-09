@@ -1,15 +1,18 @@
 #include "core/AutoScaler.hpp"
 #include "Constants.hpp"
 #include "VM.hpp"
+#include "connection/Message.hpp"
 #include "core/VMManager.hpp"
 #include "core/VMMonitor.hpp"
 #include "logger/Logger.hpp"
 #include "utils/IDGenerator.hpp"
 #include "utils/utils.hpp"
 #include <algorithm>
+#include <chrono>
 #include <libvirt/libvirt.h>
 #include <stdexcept>
 #include <string>
+#include <thread>
 
 void AutoScaler::listAllVMs() const {
     const auto vmNames = manager.getAllVMNames();
@@ -39,12 +42,16 @@ void AutoScaler::populateVMs() {
 
 void AutoScaler::scaleDown(const VM &vm) {
     LOG_INFO("VM {} Reached MIN Threshold...", vm.getName());
+
     if (vms.size() == 1) {
         LOG_INFO("There is only one VM. Scale down NOT initiated");
         return;
     }
 
     LOG_INFO("There are {} VMs. Scale down initiated...", vms.size());
+    std::string destroyedVMIP = vm.getIP();
+    const std::string destroyedVMName = vm.getName();
+
     destroyer.destroy(vm);
     auto it = std::find(vms.begin(), vms.end(), vm);
     if (it != vms.end()) {
@@ -52,6 +59,9 @@ void AutoScaler::scaleDown(const VM &vm) {
     }
 
     LOG_INFO("VM destroyed");
+
+    Message message = Message::destroy(destroyedVMName, destroyedVMIP);
+    sender.send(message);
 }
 
 void AutoScaler::scaleUp() {
@@ -63,6 +73,12 @@ void AutoScaler::scaleUp() {
 
     LOG_INFO("VM {} Cloned to {} and started.", baseVMName, cloneVMName);
     LOG_INFO("State of {} is: {}", cloneVMName, VMStateToString(manager.getStateOfVM(cloneVMName)));
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    const VM &clonedVM = vms[vms.size() - 1];
+    std::string ip = clonedVM.getIP();
+    Message message = Message::add(cloneVMName, ip);
+    sender.send(message);
 }
 
 void AutoScaler::monitorAndScale() {
