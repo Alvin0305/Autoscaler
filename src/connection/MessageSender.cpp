@@ -1,7 +1,8 @@
 #include "connection/MessageSender.hpp"
+#include "lib/httplib.hpp"
 #include "logger/Logger.hpp"
 #include "utils/utils.hpp"
-#include <sstream>
+#include <nlohmann/json.hpp>
 
 std::ostream &operator<<(std::ostream &out, const Message::Action &action) {
     out << messageActionToString(action);
@@ -9,30 +10,22 @@ std::ostream &operator<<(std::ostream &out, const Message::Action &action) {
 }
 
 const std::string MessageSender::buildMessageBody(const Message &message) const {
-    std::stringstream ss;
-    ss << "{\n";
-    ss << "\tevent: " << message.action << ",\n";
-    ss << "\tname: " << message.vmName << ",\n";
-    ss << "\tip: " << message.ip << '\n';
-    ss << "}\n";
-
-    return ss.str();
+    nlohmann::json j = message;
+    return j.dump();
 }
 
-const std::string MessageSender::buildMessage(const std::string &body) const {
-    std::stringstream ss;
-    ss << "POST /autoscaler/scale HTTP/1.1\r\n";
-    ss << "Content-Type: application/json\r\n";
-    ss << "Content-Length: " << body.size() << "\r\n";
-    ss << "\r\n";
-    ss << body;
-    return ss.str();
-}
-
-void MessageSender::send(const Message &message) const {
+void MessageSender::send(const Message &message) {
     const std::string body = buildMessageBody(message);
-    const std::string bytes = buildMessage(body);
+    LOG_DEBUG("Sending Message: {}", body);
+    auto response = client.Post("/scale", body, "application/json");
 
-    LOG_DEBUG("Sending Message: {}", bytes);
-    socket.send(bytes);
+    if (not response) {
+        auto error = response.error();
+        LOG_ERROR("Request Failed with error: {}", httplib::to_string(error));
+        return;
+    }
+
+    LOG_INFO("HTTP Response Status: {}", response->status);
+    LOG_INFO("Body: {}", response->body);
+    LOG_INFO("Content-Type: {}", response->get_header_value("Content-Type"));
 }

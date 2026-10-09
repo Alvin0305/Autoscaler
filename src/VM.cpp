@@ -1,8 +1,10 @@
 #include "VM.hpp"
 #include "logger/Logger.hpp"
+#include <chrono>
 #include <libvirt/libvirt.h>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <vector>
 
 VM::~VM() {
@@ -103,25 +105,39 @@ std::vector<virDomainMemoryStatStruct> VM::getMemoryStats() const {
 }
 
 std::string VM::getIP() const {
-    virDomainInterfacePtr *interfaces = nullptr;
-    int count = virDomainInterfaceAddresses(domainPtr, &interfaces, VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0);
-    if (count < 0) {
-        throw std::runtime_error("virDomainInterfaceAddresses failed");
-    }
+    const auto startTime = std::chrono::system_clock::now();
+    const auto timeout = std::chrono::seconds(20);
 
-    for (int i = 0; i < count; i++) {
-        virDomainInterfacePtr interface = interfaces[i];
+    while (true) {
+        virDomainInterfacePtr *interfaces = nullptr;
+        int count = virDomainInterfaceAddresses(domainPtr, &interfaces, VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0);
+        if (count < 0) {
+            throw std::runtime_error("virDomainInterfaceAddresses failed");
+        }
 
-        LOG_INFO("Interface: {}, MAC: {}", interface->name, interface->hwaddr);
+        for (int i = 0; i < count; i++) {
+            virDomainInterfacePtr interface = interfaces[i];
 
-        for (int j = 0; j < interface->naddrs; j++) {
-            virDomainIPAddressPtr address = &interface->addrs[j];
-            LOG_INFO("IP: {}", address->addr);
+            LOG_INFO("Interface: {}, MAC: {}", interface->name, interface->hwaddr);
 
-            if (address->type == VIR_IP_ADDR_TYPE_IPV4) {
-                std::string ip = address->addr;
-                return ip;
+            for (int j = 0; j < interface->naddrs; j++) {
+                virDomainIPAddressPtr address = &interface->addrs[j];
+                LOG_INFO("IP: {}", address->addr);
+
+                if (address->type == VIR_IP_ADDR_TYPE_IPV4) {
+                    std::string ip = address->addr;
+                    return ip;
+                }
             }
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+
+        const auto now = std::chrono::system_clock::now();
+        const auto diff = now - startTime;
+        if (diff > timeout) {
+            LOG_ERROR("Timeout!. Failed to get IP within {} seconds.", timeout);
+            break;
         }
     }
 

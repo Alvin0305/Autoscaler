@@ -1,6 +1,7 @@
 #ifndef AUTO_SCALER_HPP
 #define AUTO_SCALER_HPP
 
+#include "Constants.hpp"
 #include "VM.hpp"
 #include "VMManager.hpp"
 #include "connection/MessageSender.hpp"
@@ -33,7 +34,7 @@ class AutoScaler {
   public:
     AutoScaler()
         : manager(), cloner(manager.getConnectionPtr()), destroyer(manager.getConnectionPtr()), idGenerator(),
-          sender("127.0.0.1", 8080) {};
+          sender(Constants::CLIENT_IP, Constants::CLIENT_PORT) {};
     void start();
 };
 

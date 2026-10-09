@@ -8,11 +8,9 @@
 #include "utils/IDGenerator.hpp"
 #include "utils/utils.hpp"
 #include <algorithm>
-#include <chrono>
 #include <libvirt/libvirt.h>
 #include <stdexcept>
 #include <string>
-#include <thread>
 
 void AutoScaler::listAllVMs() const {
     const auto vmNames = manager.getAllVMNames();
@@ -74,9 +72,12 @@ void AutoScaler::scaleUp() {
     LOG_INFO("VM {} Cloned to {} and started.", baseVMName, cloneVMName);
     LOG_INFO("State of {} is: {}", cloneVMName, VMStateToString(manager.getStateOfVM(cloneVMName)));
 
-    std::this_thread::sleep_for(std::chrono::seconds(10));
     const VM &clonedVM = vms[vms.size() - 1];
     std::string ip = clonedVM.getIP();
+    if (ip.empty()) {
+        vms.pop_back();
+        return;
+    }
     Message message = Message::add(cloneVMName, ip);
     sender.send(message);
 }
@@ -115,6 +116,12 @@ void AutoScaler::start() {
     for (const auto &vm : vms) {
         if (manager.getStateOfVM(vm.getName()) == VIR_DOMAIN_RUNNING) continue;
         manager.startVM(vm.getName());
+    }
+
+    for (const auto &vm : vms) {
+        auto message = Message::add(vm.getName(), vm.getIP());
+        LOG_INFO("Sending message {}", message);
+        sender.send(message);
     }
 
     try {

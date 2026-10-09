@@ -6,12 +6,16 @@
 #include <string>
 #include <vector>
 
+void to_json(nlohmann::json &j, const Message &message) {
+    j = nlohmann::json{{"action", messageActionToString(message.action)}, {"name", message.vmName}, {"ip", message.ip}};
+}
+
 std::string messageActionToString(const Message::Action &action) {
     switch (action) {
         case Message::Action::VM_ADDED:
-            return "vm_added";
+            return "VM_ADDED";
         case Message::Action::VM_DESTROYED:
-            return "vm_destroyed";
+            return "VM_DESTROYED";
         default:
             throw std::runtime_error("Unhandled Message Action");
     }
@@ -91,5 +95,12 @@ std::ostream &operator<<(std::ostream &out, const virDomainInfo &info) {
     out << "# Virtual CPU: " << info.nrVirtCpu << std::endl;
     out << "State: " << VMStateToString(info.state) << std::endl;
     out << std::string(50, '-') << std::endl;
+    return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const Message &message) {
+    out << "{ action: " << messageActionToString(message.action) << ", ";
+    out << "name: " << message.vmName << ", ";
+    out << "ip: " << message.ip << " }";
     return out;
 }

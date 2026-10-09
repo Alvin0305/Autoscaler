@@ -1,6 +1,7 @@
 #ifndef MESSAGE_HPP
 #define MESSAGE_HPP
 
+#include <nlohmann/json.hpp>
 #include <string>
 
 struct Message {
